@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset=utf-8 />
+  <title>Important Locations in Denver, CO</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <!-- Is the is the latest version of Leaflet? -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: rgb(43, 43, 43);
+      font-family: "Lato", sans-serif;
+      font-size: 100%;
+      font-weight: 300;
+      color: rgb(172, 172, 172);
+    }
+
+    header,
+    footer,
+    section {
+      padding: 6px 10%;
+      margin: 0 auto;
+      width: 80%
+    }
+    a {
+      color:#5262f3;
+      font-weight: normal;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+    /* h1, h2 {
+      text-align: center;
+    } */
+    h1 {
+      display: inline-block;
+      margin-right: 20px;
+      color: rgb(190, 190, 190);
+      font-size: 3.5em;
+      font-weight: 700;
+    }
+
+    h2 {
+      display: inline-block;
+      color: rgba(255, 200, 0, 0.8);
+      letter-spacing: 0.05em;
+      margin-top: 0px;
+      font-weight: 300;
+      text-transform: uppercase;
+      border-bottom: 1px dotted rgba(255, 200, 0, 0.5);
+    }
+
+    .img-fill {
+      width: 100%;
+      height: 540px;
+      margin: 10px auto;
+    }
+
+    #map {
+      width: 100%;
+      height: 540px;
+      margin: 10px auto;
+    }
+
+    p {
+      font-size: 1em;
+      color: rgba(170, 170, 170);
+      ;
+      font-weight: 300;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Services in Denver, CO</h1>
+    <h2>Fire Stations, Food Stores and After-school Programs</h2>
+  </header>
+<section>
+  <div id='map'></div>
+
+    <p>Fire stations, food stores, and community programs are just some of the civic services available in Denver. Being a major metropolitan area,
+      the city boasts an extensive selection of after school programs throughout. Also available are an abundance of food stores and fire stations
+      placed strategically around the city.</p>
+      <img src="http://www.10-75.net/imagesxi/DSC_3824.jpg" alt="Fire Engine"
+      class="img-fill"><br>
+      Denver Fire Department Engine: 
+      <a href="https://www.denvergov.org/content/denvergov/en/fire-department-home/contact-us/fire-stations.html">Denver Fire Department</a><br>
+      Photo provided by Eli Gill, <a href="http://www.10-75.net/apparatus/co/denverfd/hm1.html">10-75.net</a>
+    </section>
+      <footer>
+        <p>Map authored by Will Childers for University of Kentucky MAP 672</p>
+        <hr>
+    
+        <a href="https://newmapsplus.github.io">
+          <img src="https://newmapsplus.github.io/assets/graphics/logo-2018-nmp-75px-h-gray.png"
+            alt="University of Kentucky Geography">
+        </a>
+    
+        <a href="https://uky-gis.github.io">
+          <img src="https://newmapsplus.github.io/assets/graphics/logo-2018-geography-75px-h.png"
+            alt="University of Kentucky Geography">
+        </a>
+      </footer>
+  <!-- Is the is the latest version of Leaflet? -->
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+  <script src="data/ireland_arch_points.js"></script>
+  <script>
+    // initialize leaflet map
+    var map = L.map('map', {
+            center: [39.7256, -104.9252],
+            zoom: 11,
+        });
+        // add some tiles
+        var tiles = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/dark_all/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+        // shared styles
+        var commonStyles = {
+            stroke: false,
+            radius: 5,
+            fillOpacity: 1
+        }
+        // empty object to hold multiple L.geoJson layers
+        var geoJsonLayers = {};
+
+        // data model
+        var layersInfo = {
+            irelandLayer: {
+                source: irelandPoints,
+                color: '#dc2b28',
+                label: "Archaeological Points",
+                accessor: 'EDITED_TYP'
+            }
+        };
+
+        // loop through the data model
+        for (var gsLayer in layersInfo) {
+
+            // create new L.geoJson layer for each
+            geoJsonLayers[gsLayer] = L.geoJson(layersInfo[gsLayer].source, {
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, {
+                        color: layersInfo[gsLayer].color
+                    });
+                },
+                style: function (feature) {
+                    return commonStyles;
+                },
+                onEachFeature: function (feature, layer) {
+                    var tooltip = feature.properties[layersInfo[gsLayer].accessor];
+                    layer.bindTooltip(tooltip);
+                }
+            }).addTo(map);
+        }
+
+        // when use clicks on the map
+        map.on('click', function (e) {
+
+            // loop through all the layer groups
+            for (var gsLayer in geoJsonLayers) {
+
+                // loop through all layers of each group
+                geoJsonLayers[gsLayer].eachLayer(function (layer) {
+
+                    // get the distance
+                    var distance = e.latlng.distanceTo(layer.getLatLng()) / 1000;
+
+                    // show or hide 
+                    if (distance <= 1) {
+                        layer.setStyle({
+                            fillOpacity: true
+                        });
+                    } else {
+                        layer.setStyle({
+                            fillOpacity: .1
+                        });
+                    }
+
+                });
+            }
+
+        });
+
+        // create empty object
+        var denverLocations = {};
+
+        // loop through layerInfo
+        for (var layer in layersInfo) {
+            // build string for UI text
+            var str = `<b style='color:${layersInfo[layer].color }'>${layersInfo[layer].label}</b>`;
+            // create object property with pair
+            denverLocations[str] = geoJsonLayers[layer];
+        }
+
+        // add the layer control to the map
+        L.control.layers(null, denverLocations, {
+            collapsed: false
+        }).addTo(map);
+
+  </script>
+
+</body>
+
+</html>
